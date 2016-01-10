@@ -1,0 +1,20 @@
+# mingw environment to build dependency binaries in a reproducible environment
+# https://wiki.debian.org/ReproducibleBuilds
+
+dependencies:
+  build: dependencies
+  volumes:
+# bitmask sources
+    - ../../:/var/src/bitmask:ro
+# produced binaries
+    - ../../build:/var/build
+
+# nsis environment to build installer (exe) that contains all required binaries
+# for a clean, just installed windows machine
+installer:
+  build: installer
+  volumes:
+# bitmask sources
+    - ../../:/var/src/bitmask:ro
+# produced installers
+    - ../../dist:/var/dist

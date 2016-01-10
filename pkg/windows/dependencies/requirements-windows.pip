@@ -1,0 +1,60 @@
+# in order of addition to the project.
+# try not to change the ordering.
+#
+# PySide -- It's a requirement indeed, but
+# it gives troubles when operating inside virtualenvs.
+# Use LEAP_VENV_SKIP_PYSIDE to avoid installing it!
+
+argparse
+requests>=1.1.0
+srp>=1.0.2
+pyopenssl
+coloredlogs
+
+psutil
+
+ipaddr
+twisted
+setuptools-scm
+keyring
+zope.proxy
+
+# You will want to install this bundled if you don't have sodium in your system:
+# pip install pyzmq --install-option="--zmq=bundled"
+pyzmq
+txzmq
+
+# leap.common
+dateutils
+
+# leap.mail
+zope.interface
+twisted  # >= 12.0.3 ??
+zope.proxy
+service-identity
+pycryptopp
+
+# leap.bitmask.app
+simplejson
+
+# leap.soledad.common
+
+u1db
+
+# leap.soledad.client
+charded
+pysqlcipher>2.6.3
+u1db
+scrypt
+pycryptopp
+cchardet
+zope.proxy
+twisted
+
+# leap.keymanager
+gnupg
+
+# Remove this when u1db fixes its dependency on oauth
+oauth
+
+logbook>=0.7.0
