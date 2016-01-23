@@ -1,5 +1,5 @@
 FROM debian:jessie
-MAINTAINER me@log0.de
+MAINTAINER paixu@0xn0.de
 
 ENV PYTHON_VERSION=2.7.11
 ENV OPENSSL_VERSION=1.0.2e
@@ -11,10 +11,14 @@ ENV MINGW_BIN_VERSION=0.6.2-mingw32-beta-20131004-1-bin
 # install packages required to build
 # https-transport: winehq deb
 # winbind: pip install keyring (requirements.pip) needs this somehow
+# git-core: clone rw copy of repo and build specific commit
+# imagemagick: convert png to ico-files
 RUN apt-get update && apt-get -y install \
     unzip curl apt-transport-https \
     winbind \
     build-essential autoconf bison gperf flex libtool mingw-w64 \
+    git-core \
+    imagemagick \
     pkg-config
 
 # install wine > 1.6.2 (debian:jessie version fails with pip)
@@ -69,6 +73,7 @@ RUN mkdir -p /root/.wine/drive_c/zlib/src \
 ######
 # install gcc for most pip builds
 # install g++ for pycryptopp
+# this is mingw in wine, not to get confused with mingw-w64 in container-host
 RUN wine msiexec -i /tmp/python-${PYTHON_VERSION}.msi -q \
  && wine c:/mingw/bin/mingw-get.exe install gcc g++ mingw32-make \
  && rm -r /tmp/.wine-0
@@ -82,6 +87,8 @@ RUN wine msiexec -i /tmp/python-${PYTHON_VERSION}.msi -q \
 # pyside-rcc fix (https://srinikom.github.io/pyside-bz-archive/670.html)
 RUN printf "[build]\ncompiler=mingw32\n\n[build_ext]\ninclude_dirs=c:\\openssl\\include;c:\\zlib\\include\nlibraries=crypto\nlibrary_dirs=c:\\openssl\\lib;c:\\openssl\\bin;c:\\zlib\\lib;c:\\zlib\\bin" > /root/.wine/drive_c/Python27/Lib/distutils/distutils.cfg \
  && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"PATH"="C:\\\\python27;C:\\\\python27\\\\Scripts;C:\\\\python27\\\\Lib\\\\site-packages\\\\PySide;C:\\\\mingw\\\\bin;c:\\\\windows;c:\\\\windows\\\\system"' > /root/.wine/drive_c/path.reg \
+ && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"OPENSSL_CONF"="C:\\\\openssl"' > /root/.wine/drive_c/openssl_conf.reg \
+ && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"PYTHONPATH"="C:\\\\python\\\\lib\\\\site-packages;Z:\\\\var\\\\build\\\\bitmask_rw\\\\src"' > /root/.wine/drive_c/pythonpath.reg \
  && cp /root/.wine/drive_c/zlib/bin/zlib1.dll /root/.wine/drive_c/mingw/bin \
  && cp /root/.wine/drive_c/zlib/lib/libz.dll.a /root/.wine/drive_c/mingw/lib
 
@@ -89,6 +96,8 @@ RUN printf "[build]\ncompiler=mingw32\n\n[build_ext]\ninclude_dirs=c:\\openssl\\
 # prepare the environment with all python dependencies installed
 #
 RUN wine regedit /root/.wine/drive_c/path.reg \
+ && wine regedit /root/.wine/drive_c/openssl_conf.reg \
+ && wine regedit /root/.wine/drive_c/pythonpath.reg \
  && wine pip install virtualenv pyinstaller \
  && wine pip install wheel \
  && wine pip install -U setuptools-scm \

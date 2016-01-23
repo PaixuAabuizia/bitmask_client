@@ -5,7 +5,10 @@ block_cipher = None
 a = Analysis(['bitmask.py'],
              hiddenimports=[
                 'zope.interface', 'zope.proxy',
-                'PySide.QtCore', 'PySide.QtGui'],
+                'PySide.QtCore', 'PySide.QtGui',
+                'pysqlcipher', 'service_identity',
+                'leap.common', 'leap.bitmask'
+                ],
              binaries=None,
              datas=None,
              hookspath=None,
@@ -18,29 +21,26 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 
 # Binary files you need to include in the form of:
-# (<destination>, <source>, "<TYPE>")
+# (<destination>, <source>, '<TYPE>')
 
 # Data files you want to include, in the form of:
-# (<destination>, <source>, "<TYPE>")
+# (<destination>, <source>, '<TYPE>')
 data = [
-  ("qt.conf", "qt.conf", "DATA")
+  ('qt.conf', 'qt.conf', 'DATA')
 ]
-
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas + data,
+          exclude_binaries=True,
           name='bitmask',
-          debug=False,
-          strip=False,
-          upx=False,
-          console=False,
-          icon='../windows/bitmask.ico')
+          debug=True,
+          strip=None,
+          upx=True,
+          console=True,
+          icon='../../data/images/mask-icon.ico')
 coll = COLLECT(exe,
-              [],
-              [],
-              data,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
               strip=None,
               upx=True,
-              name='bitmask_onefile')
+              name='bitmask')

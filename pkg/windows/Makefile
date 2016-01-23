@@ -6,7 +6,7 @@ INST = "dist/LEAP Client installer.exe"
 all:
 	# clean: ~40m (3mbit)
 	# noclean: ~3s
-	# winhq may do 503 sometimes
+	# winehq may do 503 sometimes
 	docker-compose build
 	$(MAKE) pkg
 

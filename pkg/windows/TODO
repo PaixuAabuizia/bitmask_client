@@ -12,10 +12,6 @@ fix pyinstaller binaries
 
 build&add openvpn to installer
 
-decide/discuss which installer is correct (onefile/onedir)
-
-evaluate if backend/frontend separation is intended backend=service?
-
 add high-res bitmask.ico (currently favicon.ico)
 
 parallelize build of exe +1.5min
@@ -25,8 +21,5 @@ dependency:wine
 in python
 as pycryptopp dependency
 in openvpn
-
-
-decide&setup name/identity for commits
 
 create similar infrastructure for osx dmg, preferably ran on osx for compressed dmg

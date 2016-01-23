@@ -1,5 +1,5 @@
 FROM debian:jessie
-MAINTAINER me@log0.de
+MAINTAINER paixu@0xn0.de
 RUN apt-get update
 
 
@@ -7,10 +7,12 @@ RUN apt-get update
 # install packages required to build
 
 RUN apt-get -y install \
-    python nsis \
-    python-setuptools python-pip \
- && pip install pyinstaller
+    nsis
 WORKDIR /var/src/bitmask/pkg/windows
-RUN useradd installer
-USER installer
+
+######
+# set a specific user
+# needs external tuning of the /var/dist rights!
+# RUN useradd installer
+# USER installer
 ENTRYPOINT ["/var/src/bitmask/pkg/windows/installer-build.sh"]

@@ -3,8 +3,13 @@ Environment setup in debian:jessie
 
 basically you need this to setup your environment:
 
-# apt-get install mingw
+# apt-get install mingw-w64
+# apt-get install wine
 # apt-get install nsis
+
+this is a incomplete list of dependencies, review the dependencies/Dockerfile
+to get a understanding of what needs to be setup in order to have a
+environment that builds the installer
 
 Requirements
 ============
@@ -72,7 +77,7 @@ toolchain (gcc) for building zlib and openssl in linux and wine (staging)
 with installed python and mingw32 for pip/wheel compiling.
 The hard dependencies (zlib/openssl) are part of the image as their content
 is not under development in this project. All pip installed dependencies are
-part of the dependency-build.sh script so they can be re-executed when the 
+part of the dependency-build.sh script so they can be re-executed when the
 dependencies of the project change. The image should be rebuild when openssl,
 python or pyinstaller is updated:
 

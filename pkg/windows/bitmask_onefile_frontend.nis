@@ -1,2 +1,0 @@
-!define PKGNAME bitmask_onefile_frontend
-!include .\bitmask.nsh
