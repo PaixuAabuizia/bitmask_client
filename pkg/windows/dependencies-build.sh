@@ -24,6 +24,7 @@ absolute_executable_path=/var/build/executables
 relative_executable_path=../../build/executables
 source_ro_path=/var/src/${product}
 temporary_build_path=/var/build/${product}_rw
+git_tag=HEAD
 
 setups=($(ls -1 ${source_ro_path}/pkg/windows | grep '.nis$' | sed 's|.nis$||'))
 # add mingw dlls that are build in other steps
@@ -45,6 +46,8 @@ function createInstallablesDependencies() {
   cat LICENSE | sed 's|\n|\r\n|g' > LICENSE.txt
   convert data/images/mask-icon.png  -filter Cubic -scale 256x256! data/images/mask-icon-256.png
   convert data/images/mask-icon-256.png -define icon:auto-resize data/images/mask-icon.ico
+  # execute qt-uic / qt-rcc
+  wine mingw32-make all
   popd
 }
 # create installable binaries with dlls
@@ -151,8 +154,6 @@ function installProjectDependencies() {
     pip_flags="${pip_flags} --allow-external ${unsupported_package} --allow-unverified ${unsupported_package}"
   done
   pip_flags="${pip_flags} -r"
-  # execute qt-uic / qt-rcc
-  wine mingw32-make all
 
   # install dependencies
   mkdir -p ${temporary_build_path}/wheels
@@ -178,7 +179,7 @@ function installProjectDependenciesBroken() {
   tar xzf pysqlcipher-2.6.4.tar.gz
   pushd pysqlcipher-2.6.4
   curl https://downloads.leap.se/libs/pysqlcipher/amalgamation-sqlcipher-2.1.0.zip > amalgamation-sqlcipher-2.1.0.zip
-  unzip amalgamation-sqlcipher-2.1.0.zip
+  unzip -o amalgamation-sqlcipher-2.1.0.zip
   mv sqlcipher amalgamation
   patch -p0 < ${source_ro_path}/pkg/windows/dependencies/pysqlcipher_setup.py.patch
   wine python setup.py build install
@@ -191,18 +192,37 @@ function installProjectDependenciesBroken() {
 # prepare read-write copy
 function prepareBuildPath() {
   cleanup
-  git clone ${source_ro_path} ${temporary_build_path}
-  pushd ${temporary_build_path}
-  git checkout 0.9.1
-  popd
-  # while this branch is not merged and not in a tag we need to do this
-  # in order to get the correct spec-files
-  rm ${temporary_build_path}/pkg/pyinst/*
-  cp ${source_ro_path}/pkg/pyinst/* ${temporary_build_path}/pkg/pyinst
-  cp -rf /var/build/leap.bitmask-0.9.1-SUMO/src/* ${temporary_build_path}/src
-  # hack the logger
-  sed -i "s|'bitmask.log'|str(random.random()) + '_bitmask.log'|;s|import sys|import sys\nimport random|" ${temporary_build_path}/src/leap/bitmask/logs/utils.py
-  sed -i "s|perform_rollover=True|perform_rollover=False|" ${temporary_build_path}/src/leap/bitmask/app.py
+  if [ ${git_tag} != "HEAD" ]; then
+    echo "using ${git_tag} as source for the project"
+    git clone ${source_ro_path} ${temporary_build_path}
+    pushd ${temporary_build_path}
+    git checkout ${git_tag}
+    popd
+  else
+    echo "using current source tree for build"
+    mkdir -p ${temporary_build_path}/data
+    mkdir -p ${temporary_build_path}/pkg
+    mkdir -p ${temporary_build_path}/src
+    cp -r ${source_ro_path}/data/* ${temporary_build_path}/data
+    cp -r ${source_ro_path}/pkg/* ${temporary_build_path}/pkg
+    cp -r ${source_ro_path}/src/* ${temporary_build_path}/src
+    cp -r ${source_ro_path}/LICENSE ${temporary_build_path}/
+    cp -r ${source_ro_path}/Makefile ${temporary_build_path}/
+    # keep branch src/leap/bitmask
+    cp -rf /var/build/leap.bitmask-0.9.1-SUMO/src/leap/common ${temporary_build_path}/src/leap
+    cp -rf /var/build/leap.bitmask-0.9.1-SUMO/src/leap/keymanager ${temporary_build_path}/src/leap
+    cp -rf /var/build/leap.bitmask-0.9.1-SUMO/src/leap/mail ${temporary_build_path}/src/leap
+    cp -rf /var/build/leap.bitmask-0.9.1-SUMO/src/leap/soledad ${temporary_build_path}/src/leap
+  fi
+
+    # # while this branch is not merged and not in a tag we need to do this
+    # # in order to get the correct spec-files
+    # rm ${temporary_build_path}/pkg/pyinst/*
+    # cp ${source_ro_path}/pkg/pyinst/* ${temporary_build_path}/pkg/pyinst
+    # cp -rf /var/build/leap.bitmask-0.9.1-SUMO/src/* ${temporary_build_path}/src
+    # hack the logger
+    sed -i "s|'bitmask.log'|str(random.random()) + '_bitmask.log'|;s|import sys|import sys\nimport random|" ${temporary_build_path}/src/leap/bitmask/logs/utils.py
+    sed -i "s|perform_rollover=True|perform_rollover=False|" ${temporary_build_path}/src/leap/bitmask/app.py
   # patch the merge request
   curl https://raw.githubusercontent.com/PaixuAabuizia/leap_pycommon/5339b551cdfd32dfd3c61abd2ab006a05a86358b/src/leap/common/config/__init__.py \
     > ${temporary_build_path}/src/leap/common/config/__init__.py
