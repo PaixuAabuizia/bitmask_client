@@ -88,13 +88,16 @@ RUN wine msiexec -i /tmp/python-${PYTHON_VERSION}.msi -q \
 RUN printf "[build]\ncompiler=mingw32\n\n[build_ext]\ninclude_dirs=c:\\openssl\\include;c:\\zlib\\include\nlibraries=crypto\nlibrary_dirs=c:\\openssl\\lib;c:\\openssl\\bin;c:\\zlib\\lib;c:\\zlib\\bin" > /root/.wine/drive_c/Python27/Lib/distutils/distutils.cfg \
  && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"PATH"="C:\\\\python27;C:\\\\python27\\\\Scripts;C:\\\\python27\\\\Lib\\\\site-packages\\\\PySide;C:\\\\mingw\\\\bin;c:\\\\windows;c:\\\\windows\\\\system"' > /root/.wine/drive_c/path.reg \
  && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"OPENSSL_CONF"="C:\\\\openssl"' > /root/.wine/drive_c/openssl_conf.reg \
- && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"PYTHONPATH"="C:\\\\python\\\\lib\\\\site-packages;Z:\\\\var\\\\build\\\\bitmask_rw\\\\src"' > /root/.wine/drive_c/pythonpath.reg \
+ && printf 'REGEDIT4\n\n[HKEY_CURRENT_USER\\Environment]\n"PYTHONPATH"="C:\\\\python27\\\\lib\\\\site-packages;Z:\\\\var\\\\build\\\\bitmask_rw\\\\src"' > /root/.wine/drive_c/pythonpath.reg \
  && cp /root/.wine/drive_c/zlib/bin/zlib1.dll /root/.wine/drive_c/mingw/bin \
  && cp /root/.wine/drive_c/zlib/lib/libz.dll.a /root/.wine/drive_c/mingw/lib
 
 ####
 # prepare the environment with all python dependencies installed
+# inject dirspec from distribution
 #
+RUN apt-get install -y python-dirspec \
+ && cp -r /usr/lib/python2.7/dist-packages/dirspec* /root/.wine/drive_c/Python27/Lib/site-packages/
 RUN wine regedit /root/.wine/drive_c/path.reg \
  && wine regedit /root/.wine/drive_c/openssl_conf.reg \
  && wine regedit /root/.wine/drive_c/pythonpath.reg \
@@ -105,17 +108,6 @@ RUN wine regedit /root/.wine/drive_c/path.reg \
  && wine pip install -U keyring \
  && wine pip install -U pyside python-qt \
  && rm -r /tmp/.wine-0
-
-###
-# packages not working with pip install
-# pysqlcipher
-# wget pysqlcipher; wget https://downloads.leap.se/libs/pysqlcipher/amalgamation-sqlcipher-2.1.0.zip; unzip & copy to pyslqcipher/amalgamation
-# prefix OPENSSL_CONF=c:\openssl
-# patch setup.py ext.extra_link_args.append("-lcrypto")
-# python setup.py build
-# python setup.py install
-
-# mingw32-make? -> maker
 
 # alternative msvc: after python is installed (or before?)
 # && wine msiexec -i /tmp/msvcforpython27.msi -q \

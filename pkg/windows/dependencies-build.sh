@@ -165,6 +165,7 @@ function installProjectDependencies() {
   popd
 }
 function installProjectDependenciesBroken() {
+  pushd ${temporary_build_path} > /dev/null
   # migrate to requirements?
   wine pip install dateutils simplejson jsonschema pycryptopp routes paste chardet scrypt gnupg
   # u1db - broken by dirspec
@@ -188,6 +189,7 @@ function installProjectDependenciesBroken() {
   pushd /root/.wine/dosdevices/c:/Python27/Lib/site-packages
   unzip -o pysqlcipher-2.6.4-py2.7-win32.egg
   popd
+  popd # temporary_build_path
 }
 # prepare read-write copy
 function prepareBuildPath() {
