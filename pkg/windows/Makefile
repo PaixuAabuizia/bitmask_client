@@ -12,16 +12,21 @@ all:
 
 # ~3min
 pkg:
-	$(MAKE) dependencies
+	$(MAKE) pyinstaller
+	$(MAKE) openvpn
 	$(MAKE) installer
 
-dependencies:
-	docker-compose run --rm dependencies
+pyinstaller:
+	docker-compose run --rm pyinstaller
+
+openvpn:
+	docker-compose run --rm openvpn
 
 installer:
 	docker-compose run --rm installer
 
 clean:
-	docker rmi windows_dependencies
+	docker rmi windows_pyinstaller
+	docker rmi windows_openvpn
 	docker rmi windows_installer
 	rm -rf ../../dist/*.exe

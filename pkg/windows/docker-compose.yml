@@ -1,11 +1,16 @@
 # mingw environment to build dependency binaries in a reproducible environment
 # https://wiki.debian.org/ReproducibleBuilds
 
-dependencies:
-  build: dependencies
+pyinstaller:
+  build: pyinstaller
   volumes:
 # bitmask sources
     - ../../:/var/src/bitmask:ro
+# produced binaries
+    - ../../build:/var/build
+openvpn:
+  build: openvpn
+  volumes:
 # produced binaries
     - ../../build:/var/build
 
@@ -16,5 +21,5 @@ installer:
   volumes:
 # bitmask sources
     - ../../:/var/src/bitmask:ro
-# produced installers
+# produced installers - configured in bitmask.nsh
     - ../../dist:/var/dist

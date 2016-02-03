@@ -1,18 +1,10 @@
 TODO
 ====
 
-review / reformat license / strings
-
-fix pip install https:// in dependencies
-fix dirspec requirement of leap.common
-
-fix pyinstaller binaries
- - create simple example
- - add deps with c&cpp builds
+get a list of providers to put in ~/leap/providers
+fix the ~/leap/events/zmq_certificates/public_keys/server.key
 
 build&add openvpn to installer
-
-add high-res bitmask.ico (currently favicon.ico)
 
 parallelize build of exe +1.5min
 
