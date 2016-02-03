@@ -23,7 +23,7 @@ absolute_executable_path=/var/build/executables
 # the location of the nsis installer nis files dictates the path of the files
 relative_executable_path=../../build/executables
 source_ro_path=/var/src/${product}
-temporary_build_path=/var/build/${product}_rw
+temporary_build_path=/var/build/${product}_rw/pyinstaller
 git_tag=HEAD
 export WINEDEBUG=fixme-all
 
@@ -86,6 +86,7 @@ function createInstallables() {
     || exit 1
     removeWineDlls installables/${setup}
     addMingwDlls installables/${setup}
+    cp ${temporary_build_path}/cacert.pem ${absolute_executable_path}/${setup}
     cp -r installables/${setup} ${absolute_executable_path}
     rm -r installables
   done
@@ -113,6 +114,7 @@ function installProjectDependencies() {
   # python-daemon breaks windows build
   sed -i 's|^python-daemon|#python-daemon|' pkg/requirements.pip
   wine pip install ${pip_flags} pkg/requirements.pip
+  wget http://curl.haxx.se/ca/cacert.pem
   popd
 }
 function installProjectDependenciesBroken() {

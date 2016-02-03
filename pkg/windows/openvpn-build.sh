@@ -19,7 +19,7 @@ product=bitmask
 # the location where the pyinstaller results are placed
 absolute_executable_path=/var/build/executables
 source_ro_path=/var/src/${product}
-temporary_build_path=/var/build/${product}_rw
+temporary_build_path=/var/build/${product}_rw/openvpn
 
 git_tag=HEAD
 
@@ -35,7 +35,8 @@ function buildSource() {
   ./build \
   || exit 1
   cp -r image/openvpn ${absolute_executable_path}/openvpn
-  cp -r image/openvpn/bin/openvpn.exe ${absolute_executable_path}/bitmask
+  cp image/openvpn/bin/openvpn.exe ${absolute_executable_path}/bitmask/openvpn_leap.exe
+  cp image/openvpn/bin/*.dll ${absolute_executable_path}/bitmask/
   popd
 }
 function fetchTapWindows() {

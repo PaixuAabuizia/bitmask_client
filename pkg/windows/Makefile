@@ -2,7 +2,7 @@ GITC = `git rev-parse --short HEAD`
 DMG = "dist/leap-client-$(GITC).exe"
 INST = "dist/LEAP Client installer.exe"
 
-.PHONY: all pkg installer dependencies
+.PHONY: all pkg installer openvpn pyinstaller
 all:
 	# clean: ~40m (3mbit)
 	# noclean: ~3s
