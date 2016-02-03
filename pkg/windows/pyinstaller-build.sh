@@ -53,6 +53,8 @@ function createInstallablesDependencies() {
   convert data/images/mask-icon-256.png -define icon:auto-resize data/images/mask-icon.ico
   # execute qt-uic / qt-rcc
   wine mingw32-make all
+  wine python setup.py build
+  wine python setup.py install
   popd
 }
 # create installable binaries with dlls
@@ -62,11 +64,6 @@ function createInstallables() {
 
   # namespace in site-packages leads to unresolvable local src/leap namespace
   # they need to get installed with pip, but must not be available for pyinstaller
-  mkdir -p /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root
-  mv /root/.wine/drive_c/Python27/Lib/site-packages/leap /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap
-  mv /root/.wine/drive_c/Python27/Lib/site-packages/leap* /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root
-  cp -r /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap/* ${temporary_build_path}/src/leap
-  cp -r /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root/* ${temporary_build_path}/src
   # rm ${temporary_build_path}/src/*.pth
 
   pushd ${temporary_build_path}/pkg/pyinst
@@ -95,7 +92,6 @@ function createInstallables() {
   popd
   pushd ${temporary_build_path}
   cp data/images/mask-icon.ico ${absolute_executable_path}/
-  cp LICENSE.txt ${absolute_executable_path}/
   popd
 }
 
@@ -149,8 +145,7 @@ function prepareBuildPath() {
     cp -r ${source_ro_path}/data/* ${temporary_build_path}/data
     cp -r ${source_ro_path}/pkg/* ${temporary_build_path}/pkg
     cp -r ${source_ro_path}/src/* ${temporary_build_path}/src
-    cp -r ${source_ro_path}/LICENSE ${temporary_build_path}/
-    cp -r ${source_ro_path}/Makefile ${temporary_build_path}/
+    cp ${source_ro_path}/* ${temporary_build_path}/
   fi
 
   # hack the logger
