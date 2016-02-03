@@ -1,12 +1,9 @@
 TODO
 ====
 
-get a list of providers to put in ~/leap/providers
 fix the ~/leap/events/zmq_certificates/public_keys/server.key
-
-build&add openvpn to installer
-
-parallelize build of exe +1.5min
+fix logger (& remove hack in pyinstaller-build.sh)
+fix pysqlcipher (/LIB:,https get not working in setup.py)
 
 discuss: libssl:multilib
 dependency:wine
