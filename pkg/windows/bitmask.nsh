@@ -37,6 +37,32 @@ function .onInit
     !insertmacro VerifyUserIsAdmin
 functionEnd
 
+section "TAP Virtual Ethernet Adapter" SecTAP
+    SetOverwrite on
+    SetOutPath "$TEMP"
+    File /oname=tap-windows.exe "..\..\build\executables\openvpn\tap-windows.exe"
+
+    DetailPrint "Installing TAP (may need confirmation)..."
+    nsExec::ExecToLog '"$TEMP\tap-windows.exe" /S /SELECT_UTILITIES=1'
+    Pop $R0 # return value/error/timeout
+
+    Delete "$TEMP\tap-windows.exe"
+    WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "tap" "installed"
+
+sectionEnd
+
+section "TAP Virtual Ethernet Adapter Uninstall" un.SecTAP
+    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "tap"
+    ${If} $R0 == "installed"
+        ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TAP-Windows" "UninstallString"
+        ${If} $R0 != ""
+            DetailPrint "Uninstalling TAP..."
+            nsExec::ExecToLog '"$R0" /S'
+            Pop $R0 # return value/error/timeout
+        ${EndIf}
+    ${EndIf}
+sectionEnd
+
 section "install"
     setOutPath $INSTDIR
 
