@@ -15,7 +15,7 @@
 # copy files to executables so they can be installed
 # cleans up (remove read-write copy)
 
-product=openvpn
+product=bitmask
 # the location where the pyinstaller results are placed
 absolute_executable_path=/var/build/executables
 source_ro_path=/var/src/${product}
@@ -34,13 +34,19 @@ function buildSource() {
   CBUILD=i686-pc-linux-gnu \
   ./build \
   || exit 1
-  && cp -r image/openvpn ${absolute_executable_path}/openvpn \
-  && cp -r sources/tap-windows* ${absolute_executable_path}/openvpn \
+  cp -r image/openvpn ${absolute_executable_path}/openvpn
+  popd
+}
+function fetchTapWindows() {
+  pushd ${temporary_build_path}/openvpn-build
+  source windows-nsis/build-complete.vars
+  wget ${TAP_WINDOWS_INSTALLER_URL} -O ${absolute_executable_path}/openvpn/tap-windows.exe
   popd
 }
 # prepare read-write copy
 function prepareBuildPath() {
   cleanup
+  mkdir -p ${temporary_build_path}
   pushd ${temporary_build_path}
   git clone https://github.com/OpenVPN/openvpn-build
   popd
@@ -48,6 +54,7 @@ function prepareBuildPath() {
 function main() {
   prepareBuildPath
   buildSource
+  fetchTapWindows
   cleanup
 }
 main $@

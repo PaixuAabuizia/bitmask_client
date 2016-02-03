@@ -11,6 +11,8 @@ pyinstaller:
 openvpn:
   build: openvpn
   volumes:
+# bitmask sources
+    - ../../:/var/src/bitmask:ro
 # produced binaries
     - ../../build:/var/build
 

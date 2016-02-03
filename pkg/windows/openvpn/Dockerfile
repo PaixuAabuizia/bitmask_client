@@ -10,10 +10,8 @@ MAINTAINER paixu@0xn0.de
 RUN apt-get update && apt-get -y install \
     unzip bzip2 \
     curl wget \
-    apt-transport-https mingw-w64 \
+    apt-transport-https \
     man2html \
-    git-core
-
-RUN apt-get -y install \
-    mc
+    git-core \
+    build-essential autoconf mingw-w64
 ENTRYPOINT ["/var/src/bitmask/pkg/windows/openvpn-build.sh"]
