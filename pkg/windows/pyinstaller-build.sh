@@ -62,9 +62,9 @@ function createInstallables() {
 
   # namespace in site-packages leads to unresolvable local src/leap namespace
   # they need to get installed with pip, but must not be available for pyinstaller
-  mkdir -p /root/.wine/drive_c/Python27/Lib/site-packages/leap_masked_root
-  mv /root/.wine/drive_c/Python27/Lib/site-packages/leap /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap 2>/dev/null
-  mv /root/.wine/drive_c/Python27/Lib/site-packages/leap* /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root 2>/dev/null
+  mkdir -p /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root
+  mv /root/.wine/drive_c/Python27/Lib/site-packages/leap /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap
+  mv /root/.wine/drive_c/Python27/Lib/site-packages/leap* /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root
   cp -r /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap/* ${temporary_build_path}/src/leap
   cp -r /root/.wine/drive_c/Python27/Lib/site-packages/masked_leap_root/* ${temporary_build_path}/src
   # rm ${temporary_build_path}/src/*.pth
