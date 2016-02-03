@@ -127,7 +127,7 @@ function installProjectDependenciesBroken() {
   curl https://downloads.leap.se/libs/pysqlcipher/amalgamation-sqlcipher-2.1.0.zip > amalgamation-sqlcipher-2.1.0.zip
   unzip -o amalgamation-sqlcipher-2.1.0.zip
   mv sqlcipher amalgamation
-  patch -p0 < ${source_ro_path}/pkg/windows/dependencies/pysqlcipher_setup.py.patch
+  patch -p0 < ${source_ro_path}/pkg/windows/pyinstaller/pysqlcipher_setup.py.patch
   wine python setup.py build install
   popd
   popd # temporary_build_path

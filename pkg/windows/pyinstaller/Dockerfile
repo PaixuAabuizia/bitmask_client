@@ -114,4 +114,4 @@ RUN wine regedit /root/.wine/drive_c/path.reg \
 
 RUN apt-get -y install \
     mc
-ENTRYPOINT ["/var/src/bitmask/pkg/windows/dependencies-build.sh"]
+ENTRYPOINT ["/var/src/bitmask/pkg/windows/pyinstaller-build.sh"]
