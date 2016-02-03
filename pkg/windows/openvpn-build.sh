@@ -35,6 +35,7 @@ function buildSource() {
   ./build \
   || exit 1
   cp -r image/openvpn ${absolute_executable_path}/openvpn
+  cp -r image/openvpn/bin/openvpn.exe ${absolute_executable_path}/bitmask
   popd
 }
 function fetchTapWindows() {
