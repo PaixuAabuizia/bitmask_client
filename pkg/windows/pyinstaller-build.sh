@@ -16,16 +16,16 @@
 # cleans up (remove wine-dlls, remove read-write copy)
 # creates nsis install/uninstall scripts for the files for each package
 
-
 product=bitmask
 # the location where the pyinstaller results are placed
 absolute_executable_path=/var/build/executables
 # the location of the nsis installer nis files dictates the path of the files
 relative_executable_path=../../build/executables
 source_ro_path=/var/src/${product}
-temporary_build_path=/var/build/${product}_rw/pyinstaller
+temporary_build_path=/var/build/pyinstaller
 git_tag=HEAD
-export WINEDEBUG=fixme-all
+# option that is changed when a dependency-cache is found
+install_dependencies=true
 
 setups=($(ls -1 ${source_ro_path}/pkg/windows | grep '.nis$' | sed 's|.nis$||'))
 # add mingw dlls that are build in other steps
@@ -35,8 +35,8 @@ function addMingwDlls() {
   cp /root/.wine/drive_c/Python27/Lib/site-packages/zmq/libzmq.pyd ${root}
   cp /root/.wine/drive_c/Python27/Lib/site-packages/zmq/libzmq.pyd ${root}
   mkdir -p ${root}/pysqlcipher
-  cp /var/build/bitmask_rw/pkg/pyinst/build/bitmask/pysqlcipher-2.6.4-py2.7-win32.egg/pysqlcipher/_sqlite.pyd ${root}/pysqlcipher
-  cp ~/.wine/dosdevices/c:/openssl/bin/*.dll ${root}
+  cp /var/build/pyinstaller/pkg/pyinst/build/bitmask/pysqlcipher-2.6.4-py2.7-win32.egg/pysqlcipher/_sqlite.pyd ${root}/pysqlcipher
+  cp ~/.wine/drive_c/openssl/bin/*.dll ${root}
 }
 # cleanup the temporary build path for subsequent executes
 function cleanup() {
@@ -52,20 +52,15 @@ function createInstallablesDependencies() {
   convert data/images/mask-icon.png  -filter Cubic -scale 256x256! data/images/mask-icon-256.png
   convert data/images/mask-icon-256.png -define icon:auto-resize data/images/mask-icon.ico
   # execute qt-uic / qt-rcc
-  wine mingw32-make all
-  wine python setup.py build
-  wine python setup.py install
+  wine mingw32-make all || die 'qt-uic / qt-rcc failed'
+  wine python setup.py build || die 'setup.py build failed'
+  wine python setup.py update_files || die 'setup.py update_files failed'
+  wine python setup.py install || die 'setup.py install failed'
   popd
 }
 # create installable binaries with dlls
 function createInstallables() {
-  rm -r ${absolute_executable_path}
   mkdir -p ${absolute_executable_path}
-
-  # namespace in site-packages leads to unresolvable local src/leap namespace
-  # they need to get installed with pip, but must not be available for pyinstaller
-  # rm ${temporary_build_path}/src/*.pth
-
   pushd ${temporary_build_path}/pkg/pyinst
   # build install directories (contains multiple files with pyd,dll, some of
   # them look like windows WS_32.dll but are from wine)
@@ -79,15 +74,16 @@ function createInstallables() {
       --clean \
       --noconfirm \
       --distpath=.\\installables \
-      --paths=Z:\\var\\build\\bitmask_rw\\src\\ \
+      --paths=Z:\\var\\build\\pyinstaller\\src\\ \
       --paths=C:\\Python27\\Lib\\site-packages\\ \
       --debug \
       ${setup}.spec \
-    || exit 1
+    || die 'pyinstaller for "'${setup}'" failed'
     removeWineDlls installables/${setup}
     addMingwDlls installables/${setup}
-    cp ${temporary_build_path}/cacert.pem ${absolute_executable_path}/${setup}
+    rm -r ${absolute_executable_path}/${setup}
     cp -r installables/${setup} ${absolute_executable_path}
+    cp ${temporary_build_path}/cacert.pem ${absolute_executable_path}/${setup}
     rm -r installables
   done
   popd
@@ -95,7 +91,6 @@ function createInstallables() {
   cp data/images/mask-icon.ico ${absolute_executable_path}/
   popd
 }
-
 # install (windows)dependencies of project
 function installProjectDependencies() {
   pushd ${temporary_build_path} > /dev/null
@@ -109,30 +104,48 @@ function installProjectDependencies() {
 
   # install dependencies
   mkdir -p ${temporary_build_path}/wheels
-  wine pip install ${pip_flags} pkg/requirements-leap.pip
+  wine pip install ${pip_flags} pkg/requirements-leap.pip || die 'requirements-leap.pip could not be installed'
   # fix requirements
   # python-daemon breaks windows build
   sed -i 's|^python-daemon|#python-daemon|' pkg/requirements.pip
-  wine pip install ${pip_flags} pkg/requirements.pip
-  wget http://curl.haxx.se/ca/cacert.pem
+  wine pip install ${pip_flags} pkg/requirements.pip || die 'requirements.pip could not be installed'
   popd
+  cp -r /root/.wine/drive_c/Python27/Lib/site-packages ${absolute_executable_path}
 }
+# workaround for broken dependencies
+# runs before pip install requirements
+# fixes failure for pysqlcipher as this requests a https file that the
+# windows-python fails to request
 function installProjectDependenciesBroken() {
   pushd ${temporary_build_path} > /dev/null
-  curl https://pypi.python.org/packages/source/p/pysqlcipher/pysqlcipher-2.6.4.tar.gz > pysqlcipher-2.6.4.tar.gz
+  curl https://pypi.python.org/packages/source/p/pysqlcipher/pysqlcipher-2.6.4.tar.gz \
+    > pysqlcipher-2.6.4.tar.gz \
+    || die 'fetch pysqlcipher failed'
   tar xzf pysqlcipher-2.6.4.tar.gz
   pushd pysqlcipher-2.6.4
-  curl https://downloads.leap.se/libs/pysqlcipher/amalgamation-sqlcipher-2.1.0.zip > amalgamation-sqlcipher-2.1.0.zip
-  unzip -o amalgamation-sqlcipher-2.1.0.zip
+  curl https://downloads.leap.se/libs/pysqlcipher/amalgamation-sqlcipher-2.1.0.zip \
+    > amalgamation-sqlcipher-2.1.0.zip \
+    || die 'fetch amalgamation for pysqlcipher failed'
+  unzip -o amalgamation-sqlcipher-2.1.0.zip || die 'unzip amalgamation failed'
   mv sqlcipher amalgamation
   patch -p0 < ${source_ro_path}/pkg/windows/pyinstaller/pysqlcipher_setup.py.patch
-  wine python setup.py build install
+  wine python setup.py build install || die 'setup.py for pysqlcipher failed'
   popd
   popd # temporary_build_path
 }
 # prepare read-write copy
 function prepareBuildPath() {
   cleanup
+  # ensure shared openssl for all pip builds
+  test -d ${absolute_executable_path}/openvpn || die 'openvpn not available run docker-compose run --rm openvpn'
+  cp -r ${absolute_executable_path}/openvpn /root/.wine/drive_c/openssl
+  if [ -d ${absolute_executable_path}/site-packages ]; then
+    # use pip install cache for slow connections
+    rm -r /root/.wine/drive_c/Python27/Lib/site-packages
+    cp -r ${absolute_executable_path}/site-packages /root/.wine/drive_c/Python27/Lib/
+    install_dependencies=false
+  fi
+
   if [ ${git_tag} != "HEAD" ]; then
     echo "using ${git_tag} as source for the project"
     git clone ${source_ro_path} ${temporary_build_path}
@@ -153,7 +166,7 @@ function prepareBuildPath() {
   # hack the logger
   sed -i "s|'bitmask.log'|str(random.random()) + '_bitmask.log'|;s|import sys|import sys\nimport random|" ${temporary_build_path}/src/leap/bitmask/logs/utils.py
   sed -i "s|perform_rollover=True|perform_rollover=False|" ${temporary_build_path}/src/leap/bitmask/app.py
-  # patch the merge request
+  curl https://curl.haxx.se/ca/cacert.pem > ${temporary_build_path}/cacert.pem || die 'cacert.pem could not be fetched - would result in bad ssl in installer'
 }
 # remove wine dlls that should not be in the installer
 # root: path that should be cleaned from dlls
@@ -191,10 +204,17 @@ function removeWineDlls() {
     rm ${root}/${wine_dll} 2>/dev/null
   done
 }
+# display failure message and emit non-zero exit code
+function die() {
+  echo "die:" $@
+  exit 1
+}
 function main() {
   prepareBuildPath
-  installProjectDependenciesBroken
-  installProjectDependencies
+  if [ ${install_dependencies} ]; then
+    installProjectDependenciesBroken
+    installProjectDependencies
+  fi
   createInstallablesDependencies
   createInstallables
   cleanup

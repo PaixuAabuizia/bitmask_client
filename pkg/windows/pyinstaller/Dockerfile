@@ -6,6 +6,8 @@ ENV OPENSSL_VERSION=1.0.2f
 ENV ZLIB_VERSION=1.2.8
 ENV MINGW_VERSION=0.6.2-beta-20131004-1
 ENV MINGW_BIN_VERSION=0.6.2-mingw32-beta-20131004-1-bin
+ENV WINEDEBUG=fixme-all
+
 
 ######
 # install packages required to build
@@ -43,18 +45,6 @@ RUN mkdir -p  /root/.wine/drive_c/mingw \
 #######
 # Build python dependency
 # using the 'host' (linux) xcompiler instead of fiddeling in wine
-#
-# openssl - needs approx every quarter a new update
-RUN mkdir -p /root/.wine/drive_c/openssl/src \
- && mv /tmp/openssl-${OPENSSL_VERSION}.tar.gz /root/.wine/drive_c/openssl/src \
- && cd /root/.wine/drive_c/openssl/src \
- && tar xzf openssl-${OPENSSL_VERSION}.tar.gz \
- && cd openssl-${OPENSSL_VERSION} \
- && ./Configure shared mingw \
-      --prefix=/root/.wine/drive_c/openssl/ \
- && make -j5 CC=i686-w64-mingw32-gcc CROSS_COMPILE=i686-w64-mingw32- \
- && make CC=i686-w64-mingw32-gcc CROSS_COMPILE=i686-w64-mingw32- install
-
 # zlib - needs a update every 5 years
 # adds a patch that makes a shared lib - default is static
 RUN curl -L http://zlib.net/zlib-${ZLIB_VERSION}.tar.gz > /tmp/zlib-${ZLIB_VERSION}.tar.gz
@@ -105,7 +95,6 @@ RUN wine regedit /root/.wine/drive_c/path.reg \
  && wine pip install wheel \
  && wine pip install -U setuptools-scm \
  && wine pip install -U setuptools_scm \
- && wine pip install -U keyring \
  && wine pip install -U pyside python-qt \
  && rm -r /tmp/.wine-0
 

@@ -51,18 +51,6 @@ section "TAP Virtual Ethernet Adapter" SecTAP
 
 sectionEnd
 
-section "TAP Virtual Ethernet Adapter Uninstall" un.SecTAP
-    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "tap"
-    ${If} $R0 == "installed"
-        ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TAP-Windows" "UninstallString"
-        ${If} $R0 != ""
-            DetailPrint "Uninstalling TAP..."
-            nsExec::ExecToLog '"$R0" /S'
-            Pop $R0 # return value/error/timeout
-        ${EndIf}
-    ${EndIf}
-sectionEnd
-
 section "install"
     setOutPath $INSTDIR
 
@@ -93,6 +81,16 @@ section "uninstall"
 
     # Remove files
     !include ${PKGNAMEPATH}_uninstall_files.nsh
+
+    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "tap"
+    ${If} $R0 == "installed"
+        ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TAP-Windows" "UninstallString"
+        ${If} $R0 != ""
+            DetailPrint "Uninstalling TAP..."
+            nsExec::ExecToLog '"$R0" /S'
+            Pop $R0 # return value/error/timeout
+        ${EndIf}
+    ${EndIf}
 
     # Always delete uninstaller as the last action
     delete $INSTDIR\uninstall.exe

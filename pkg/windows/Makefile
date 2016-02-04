@@ -12,8 +12,8 @@ all:
 
 # ~3min
 pkg:
-	$(MAKE) pyinstaller
 	$(MAKE) openvpn
+	$(MAKE) pyinstaller
 	$(MAKE) installer
 
 pyinstaller:
@@ -30,3 +30,4 @@ clean:
 	docker rmi windows_openvpn
 	docker rmi windows_installer
 	rm -rf ../../dist/*.exe
+	rm -rf ../../build/*

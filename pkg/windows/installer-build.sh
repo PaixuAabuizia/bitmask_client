@@ -6,16 +6,12 @@
 # builds several installers from previously compiled binaries
 
 product=bitmask
-# the location where the pyinstaller results are placed
-absolute_executable_path=/var/build/executables
 # the location of the nsis installer nis files dictates the path of the files
 relative_executable_path=../../build/executables
 source_ro_path=/var/src/${product}
-temporary_build_path=/var/tmp/${product}
+temporary_build_path=/var/tmp/installer
 
 setups=($(ls -1 ${source_ro_path}/pkg/windows | grep '.nis$' | sed 's|.nis$||'))
-
-
 
 # generate nsis file references for installer for single directory
 # appends File and Remove to files that are later included by makensis
@@ -78,29 +74,46 @@ function generateNSISStatements() {
   done
   popd
 }
+# makensis to produce a installer.exe
+# the result is placed in /var/dist
 function buildInstaller() {
   pushd ${temporary_build_path}/pkg/windows
   for setup in ${setups[@]}
   do
-    makensis ${setup}.nis
+    makensis ${setup}.nis || die 'build setup "'${setup}'" failed'
   done
   popd
 }
+# prepare build path
+# copies files that have been produced by other containers
+# merges the product so the nsis files are correct
 function prepareBuildPath() {
 	mkdir -p ${temporary_build_path}/pkg/windows
 	mkdir -p ${temporary_build_path}/build
 	cp -r ${source_ro_path}/pkg/windows/* ${temporary_build_path}/pkg/windows
 	cp -r ${source_ro_path}/build/* ${temporary_build_path}/build
 	cp -r ${source_ro_path}/LICENSE ${temporary_build_path}/LICENSE
+
+  test -d ${temporary_build_path}/build/executables/bitmask || die 'bitmask not available run docker-compose run --rm pyinstaller'
+  test -d ${temporary_build_path}/build/executables/openvpn || die 'openvpn not available run docker-compose run --rm openvpn'
+  pushd ${temporary_build_path}/build/executables
+  cp openvpn/bin/openvpn.exe bitmask
+  cp openvpn/bin/*.dll bitmask
+  popd
 }
+# remove build files to ensure subsequent builds
 function cleanup() {
 	rm -r ${temporary_build_path}
 }
-
+# display failure message and emit non-zero exit code
+function die() {
+  echo "die:" $@
+  exit 1
+}
 function main() {
   prepareBuildPath
   generateNSISStatements
   buildInstaller
-  #cleanup
+  cleanup
 }
 main $@

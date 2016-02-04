@@ -15,34 +15,29 @@
 # copy files to executables so they can be installed
 # cleans up (remove read-write copy)
 
-product=bitmask
-# the location where the pyinstaller results are placed
+# the location where the openvpn binaries are placed
 absolute_executable_path=/var/build/executables
-source_ro_path=/var/src/${product}
-temporary_build_path=/var/build/${product}_rw/openvpn
+temporary_build_path=/var/build/openvpn
 
-git_tag=HEAD
-
-setups=($(ls -1 ${source_ro_path}/pkg/windows | grep '.nis$' | sed 's|.nis$||'))
 # cleanup the temporary build path for subsequent executes
 function cleanup() {
   rm -r ${temporary_build_path} 2>/dev/null
 }
+# build openvpn source
 function buildSource() {
   pushd ${temporary_build_path}/openvpn-build/generic
   CHOST=i686-w64-mingw32 \
   CBUILD=i686-pc-linux-gnu \
   ./build \
-  || exit 1
+  || die 'build openvpn from source failed'
   cp -r image/openvpn ${absolute_executable_path}/openvpn
-  cp image/openvpn/bin/openvpn.exe ${absolute_executable_path}/bitmask/openvpn_leap.exe
-  cp image/openvpn/bin/*.dll ${absolute_executable_path}/bitmask/
   popd
 }
+# fetch tap-windows.exe as defined in the openvpn vars
 function fetchTapWindows() {
   pushd ${temporary_build_path}/openvpn-build
   source windows-nsis/build-complete.vars
-  wget ${TAP_WINDOWS_INSTALLER_URL} -O ${absolute_executable_path}/openvpn/tap-windows.exe
+  wget ${TAP_WINDOWS_INSTALLER_URL} -O ${absolute_executable_path}/openvpn/tap-windows.exe || die 'tap-windows.exe could not be fetched'
   popd
 }
 # prepare read-write copy
@@ -50,8 +45,13 @@ function prepareBuildPath() {
   cleanup
   mkdir -p ${temporary_build_path}
   pushd ${temporary_build_path}
-  git clone https://github.com/OpenVPN/openvpn-build
+  git clone https://github.com/OpenVPN/openvpn-build || die 'openvpn-build could not be cloned'
   popd
+}
+# display failure message and emit non-zero exit code
+function die() {
+  echo "die:" $@
+  exit 1
 }
 function main() {
   prepareBuildPath
