@@ -26,6 +26,9 @@ temporary_build_path=/var/build/pyinstaller
 git_tag=HEAD
 # option that is changed when a dependency-cache is found
 install_dependencies=true
+# default options for components
+with_eip=false
+with_mail=true
 
 setups=($(ls -1 ${source_ro_path}/pkg/windows | grep '.nis$' | sed 's|.nis$||'))
 # add mingw dlls that are build in other steps
@@ -163,6 +166,14 @@ function prepareBuildPath() {
     cp ${source_ro_path}/* ${temporary_build_path}/
   fi
 
+  # disable eip
+  if [ !${with_eip} ]; then
+    sed -i "s|HAS_EIP = True|HAS_EIP = False|" ${temporary_build_path}/src/leap/bitmask/_components.py
+  fi
+  # disable mail
+  if [ !${with_mail} ]; then
+    sed -i "s|HAS_MAIL = True|HAS_MAIL = False|" ${temporary_build_path}/src/leap/bitmask/_components.py
+  fi
   # hack the logger
   sed -i "s|'bitmask.log'|str(random.random()) + '_bitmask.log'|;s|import sys|import sys\nimport random|" ${temporary_build_path}/src/leap/bitmask/logs/utils.py
   sed -i "s|perform_rollover=True|perform_rollover=False|" ${temporary_build_path}/src/leap/bitmask/app.py
