@@ -47,7 +47,7 @@ section "TAP Virtual Ethernet Adapter" SecTAP
     Pop $R0 # return value/error/timeout
 
     Delete "$TEMP\tap-windows.exe"
-    WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "tap" "installed"
+    WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "tap" "installed"
 
 sectionEnd
 
@@ -82,14 +82,27 @@ section "uninstall"
     # Remove files
     !include ${PKGNAMEPATH}_uninstall_files.nsh
 
-    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "tap"
+    # Remove TAP Drivers
+    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "tap"
     ${If} $R0 == "installed"
+        DetailPrint "Uninstalling TAP as we installed it..."
         ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TAP-Windows" "UninstallString"
         ${If} $R0 != ""
             DetailPrint "Uninstalling TAP..."
             nsExec::ExecToLog '"$R0" /S'
             Pop $R0 # return value/error/timeout
+        ${Else}
+            # on x64 windows the uninstall location needs to be accessed using WOW
+            SetRegView 64
+            ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TAP-Windows" "UninstallString"
+            SetRegView 32
+            ${If} $R0 != ""
+                DetailPrint "Uninstalling TAP 64..."
+                nsExec::ExecToLog '"$R0" /S'
+                Pop $R0 # return value/error/timeout
+            ${EndIf}
         ${EndIf}
+        DeleteRegValue HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "tap"
     ${EndIf}
 
     # Always delete uninstaller as the last action
