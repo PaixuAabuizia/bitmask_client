@@ -1,6 +1,7 @@
 # pwd is a ro-mounted source-tree that had all dependencies build into
 # package-name directories
 !define PKGNAMEPATH ..\..\build\executables\${PKGNAME}
+!include ${PKGNAMEPATH}_version.nsh
 !include .\bitmask_client_product.nsh
 !include ${PKGNAMEPATH}_install_files_size.nsh
 
@@ -12,9 +13,9 @@ LicenseData "..\..\LICENSE"
 Name "${COMPANYNAME} - ${APPNAME}"
 Icon "..\..\build\executables\mask-icon.ico"
 
-# /var/dist is a rw mounted volume
-outFile "/var/dist/${PKGNAME}-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}.exe"
 
+# /var/dist is a rw mounted volume
+outFile "/var/dist/${PKGNAME}-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}${VERSIONSUFFIX}.exe"
 !include LogicLib.nsh
 
 # Just three pages - license agreement, install location, and installation

@@ -24,6 +24,8 @@ relative_executable_path=../../build/executables
 source_ro_path=/var/src/${product}
 temporary_build_path=/var/build/pyinstaller
 git_tag=HEAD
+version_prefix=leap.bitmask
+git_version=unknown
 # option that is changed when a dependency-cache is found
 install_dependencies=true
 # default options for components
@@ -56,10 +58,40 @@ function createInstallablesDependencies() {
   convert data/images/mask-icon-256.png -define icon:auto-resize data/images/mask-icon.ico
   # execute qt-uic / qt-rcc
   wine mingw32-make all || die 'qt-uic / qt-rcc failed'
-  wine python setup.py build || die 'setup.py build failed'
+  # get version using git (only available in host)
+  git_version=$(python setup.py version| grep 'Version is currently' | awk -F': ' '{print $2}')
+
+  versioned_build_path=/var/tmp/${version_prefix}-${git_version}
+  mkdir -p ${versioned_build_path}
+  cp -r ${temporary_build_path}/* ${versioned_build_path}
+  applyPatches ${versioned_build_path}
+  pushd ${versioned_build_path} > /dev/null
   wine python setup.py update_files || die 'setup.py update_files failed'
+  wine python setup.py build || die 'setup.py build failed'
   wine python setup.py install || die 'setup.py install failed'
   popd
+  rm -rf ${versioned_build_path}
+  popd
+}
+# create installer version that may be used by installer-build.sh / makensis
+# greps the version-parts from the previously extracted git_version and stores
+# the result in a setup_version.nsh
+# when the git_version does provide a suffix it is prefixed with a dash so the
+# installer output needs no conditional for this
+function createInstallerVersion() {
+  setup=$1
+  # [0-9]*.[0-9]*.[0-9]*-[0-9]*_g[0-9a-f]*_dirty
+  VERSIONMAJOR=$(echo ${git_version} | sed 's|^\([0-9]*\)\..*$|\1|')
+  VERSIONMINOR=$(echo ${git_version} | sed 's|^[0-9]*\.\([0-9]*\).*$|\1|')
+  VERSIONBUILD=$(echo ${git_version} | sed 's|^[0-9]*\.[0-9]*\.\([0-9]*\).*$|\1|')
+  VERSIONSUFFIX=$(echo ${git_version} | sed 's|^[0-9]*\.[0-9]*\.[0-9]*-\(.*\)$|\1|')
+  echo "!define VERSIONMAJOR ${VERSIONMAJOR}" > ${absolute_executable_path}/${setup}_version.nsh
+  echo "!define VERSIONMINOR ${VERSIONMINOR}" >> ${absolute_executable_path}/${setup}_version.nsh
+  echo "!define VERSIONBUILD ${VERSIONBUILD}" >> ${absolute_executable_path}/${setup}_version.nsh
+  if [ ${VERSIONSUFFIX} != "" ]; then
+    VERSIONSUFFIX="-${VERSIONSUFFIX}"
+  fi
+  echo "!define VERSIONSUFFIX ${VERSIONSUFFIX}" >> ${absolute_executable_path}/${setup}_version.nsh
 }
 # create installable binaries with dlls
 function createInstallables() {
@@ -88,6 +120,7 @@ function createInstallables() {
     cp -r installables/${setup} ${absolute_executable_path}
     cp ${temporary_build_path}/cacert.pem ${absolute_executable_path}/${setup}
     rm -r installables
+    createInstallerVersion ${setup}
   done
   popd
   pushd ${temporary_build_path}
@@ -108,9 +141,6 @@ function installProjectDependencies() {
   # install dependencies
   mkdir -p ${temporary_build_path}/wheels
   wine pip install ${pip_flags} pkg/requirements-leap.pip || die 'requirements-leap.pip could not be installed'
-  # fix requirements
-  # python-daemon breaks windows build
-  sed -i 's|^python-daemon|#python-daemon|' pkg/requirements.pip
   wine pip install ${pip_flags} pkg/requirements.pip || die 'requirements.pip could not be installed'
   popd
   cp -r /root/.wine/drive_c/Python27/Lib/site-packages ${absolute_executable_path}
@@ -148,7 +178,9 @@ function prepareBuildPath() {
     cp -r ${absolute_executable_path}/site-packages /root/.wine/drive_c/Python27/Lib/
     install_dependencies=false
   fi
-
+  if [ ! -z $1 ]; then
+    git_tag=$1
+  fi
   if [ ${git_tag} != "HEAD" ]; then
     echo "using ${git_tag} as source for the project"
     git clone ${source_ro_path} ${temporary_build_path}
@@ -158,26 +190,38 @@ function prepareBuildPath() {
   else
     echo "using current source tree for build"
     mkdir -p ${temporary_build_path}/data
+    mkdir -p ${temporary_build_path}/docs
     mkdir -p ${temporary_build_path}/pkg
     mkdir -p ${temporary_build_path}/src
+    mkdir -p ${temporary_build_path}/.git
     cp -r ${source_ro_path}/data/* ${temporary_build_path}/data
+    cp -r ${source_ro_path}/data/* ${temporary_build_path}/docs
     cp -r ${source_ro_path}/pkg/* ${temporary_build_path}/pkg
     cp -r ${source_ro_path}/src/* ${temporary_build_path}/src
+    cp -r ${source_ro_path}/.git/* ${temporary_build_path}/.git
     cp ${source_ro_path}/* ${temporary_build_path}/
   fi
-
+}
+# add patches to the sourcetree
+# this function should do nothing some day and should be run after
+# the version has been evaluated
+function applyPatches() {
+  root_path=$1
   # disable eip
   if [ !${with_eip} ]; then
-    sed -i "s|HAS_EIP = True|HAS_EIP = False|" ${temporary_build_path}/src/leap/bitmask/_components.py
+    sed -i "s|HAS_EIP = True|HAS_EIP = False|" ${root_path}/src/leap/bitmask/_components.py
   fi
   # disable mail
   if [ !${with_mail} ]; then
-    sed -i "s|HAS_MAIL = True|HAS_MAIL = False|" ${temporary_build_path}/src/leap/bitmask/_components.py
+    sed -i "s|HAS_MAIL = True|HAS_MAIL = False|" ${root_path}/src/leap/bitmask/_components.py
   fi
   # hack the logger
-  sed -i "s|'bitmask.log'|str(random.random()) + '_bitmask.log'|;s|import sys|import sys\nimport random|" ${temporary_build_path}/src/leap/bitmask/logs/utils.py
-  sed -i "s|perform_rollover=True|perform_rollover=False|" ${temporary_build_path}/src/leap/bitmask/app.py
-  curl https://curl.haxx.se/ca/cacert.pem > ${temporary_build_path}/cacert.pem || die 'cacert.pem could not be fetched - would result in bad ssl in installer'
+  sed -i "s|'bitmask.log'|str(random.random()) + '_bitmask.log'|;s|import sys|import sys\nimport random|" ${root_path}/src/leap/bitmask/logs/utils.py
+  sed -i "s|perform_rollover=True|perform_rollover=False|" ${root_path}/src/leap/bitmask/app.py
+  # fix requirements
+  # python-daemon breaks windows build
+  sed -i 's|^python-daemon|#python-daemon|' ${root_path}/pkg/requirements.pip
+  curl https://curl.haxx.se/ca/cacert.pem > ${root_path}/cacert.pem || die 'cacert.pem could not be fetched - would result in bad ssl in installer'
 }
 # remove wine dlls that should not be in the installer
 # root: path that should be cleaned from dlls
@@ -221,8 +265,8 @@ function die() {
   exit 1
 }
 function main() {
-  prepareBuildPath
-  if [ ${install_dependencies} ]; then
+  prepareBuildPath $@
+  if [ ${install_dependencies} == true ]; then
     installProjectDependenciesBroken
     installProjectDependencies
   fi

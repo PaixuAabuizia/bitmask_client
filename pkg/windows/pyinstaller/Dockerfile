@@ -88,6 +88,7 @@ RUN printf "[build]\ncompiler=mingw32\n\n[build_ext]\ninclude_dirs=c:\\openssl\\
 #
 RUN apt-get install -y python-dirspec \
  && cp -r /usr/lib/python2.7/dist-packages/dirspec* /root/.wine/drive_c/Python27/Lib/site-packages/
+RUN apt-get install -y python-setuptools
 RUN wine regedit /root/.wine/drive_c/path.reg \
  && wine regedit /root/.wine/drive_c/openssl_conf.reg \
  && wine regedit /root/.wine/drive_c/pythonpath.reg \
