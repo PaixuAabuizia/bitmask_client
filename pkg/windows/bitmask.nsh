@@ -13,7 +13,6 @@ LicenseData "..\..\LICENSE"
 Name "${COMPANYNAME} - ${APPNAME}"
 Icon "..\..\build\executables\mask-icon.ico"
 
-
 # /var/dist is a rw mounted volume
 outFile "/var/dist/${PKGNAME}-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}${VERSIONSUFFIX}.exe"
 !include LogicLib.nsh
@@ -27,9 +26,9 @@ Page instfiles
 UserInfo::GetAccountType
 pop $0
 ${If} $0 != "admin" ;Require admin rights on NT4+
-        messageBox mb_iconstop "Administrator rights required!"
-        setErrorLevel 740 ;ERROR_ELEVATION_REQUIRED
-        quit
+    messageBox mb_iconstop "Administrator rights required!"
+    setErrorLevel 740 ;ERROR_ELEVATION_REQUIRED
+    quit
 ${EndIf}
 !macroend
 
@@ -49,7 +48,6 @@ section "TAP Virtual Ethernet Adapter" SecTAP
 
     Delete "$TEMP\tap-windows.exe"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${COMPANYNAME} ${APPNAME}" "tap" "installed"
-
 sectionEnd
 
 section "install"

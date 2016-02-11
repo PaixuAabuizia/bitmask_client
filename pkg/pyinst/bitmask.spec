@@ -4,11 +4,11 @@ block_cipher = None
 
 a = Analysis(['bitmask.py'],
              hiddenimports=[
-                'zope.interface', 'zope.proxy',
-                'PySide.QtCore', 'PySide.QtGui',
-                'pysqlcipher', 'service_identity',
-                'leap.common', 'leap.bitmask'
-                ],
+               'zope.interface', 'zope.proxy',
+               'PySide.QtCore', 'PySide.QtGui',
+               'pysqlcipher', 'service_identity',
+               'leap.common', 'leap.bitmask'
+               ],
              binaries=None,
              datas=None,
              hookspath=None,
@@ -32,10 +32,10 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='bitmask',
-          debug=True,
-          strip=None,
+          debug=False,
+          strip=False,
           upx=True,
-          console=True,
+          console=False,
           icon='../../data/images/mask-icon.ico')
 coll = COLLECT(exe,
               a.binaries,
