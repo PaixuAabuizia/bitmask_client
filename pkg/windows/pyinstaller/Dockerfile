@@ -8,7 +8,6 @@ ENV MINGW_VERSION=0.6.2-beta-20131004-1
 ENV MINGW_BIN_VERSION=0.6.2-mingw32-beta-20131004-1-bin
 ENV WINEDEBUG=fixme-all
 
-
 ######
 # install packages required to build
 # https-transport: winehq deb
@@ -57,8 +56,6 @@ RUN mkdir -p /root/.wine/drive_c/zlib/src \
  && patch -p0 < /zlib-mingw-shared.patch \
  && make -f win32/Makefile.gcc PREFIX=/usr/bin/i686-w64-mingw32- \
  && make -f win32/Makefile.gcc INCLUDE_PATH=/root/.wine/drive_c/zlib/include LIBRARY_PATH=/root/.wine/drive_c/zlib/lib BINARY_PATH=/root/.wine/drive_c/zlib/bin  install
-
-
 
 ######
 # install gcc for most pip builds

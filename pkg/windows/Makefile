@@ -1,16 +1,8 @@
-GITC = `git rev-parse --short HEAD`
-DMG = "dist/leap-client-$(GITC).exe"
-INST = "dist/LEAP Client installer.exe"
-
 .PHONY: all pkg installer openvpn pyinstaller
 all:
-	# clean: ~40m (3mbit)
-	# noclean: ~3s
-	# winehq may do 503 sometimes
 	docker-compose build
 	$(MAKE) pkg
 
-# ~3min
 pkg:
 	$(MAKE) openvpn
 	$(MAKE) pyinstaller

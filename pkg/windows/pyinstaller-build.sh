@@ -15,6 +15,7 @@
 # runs pyinstaller
 # cleans up (remove wine-dlls, remove read-write copy)
 # creates nsis install/uninstall scripts for the files for each package
+# if $1 is set it is expected to be a branch/git-tag
 
 product=bitmask
 # the location where the pyinstaller results are placed
@@ -60,10 +61,14 @@ function createInstallablesDependencies() {
   wine mingw32-make all || die 'qt-uic / qt-rcc failed'
   # get version using git (only available in host)
   git_version=$(python setup.py version| grep 'Version is currently' | awk -F': ' '{print $2}')
-
+  # run setup.py in a path with the version contained so versioneer can
+  # find the information and put it into the egg
   versioned_build_path=/var/tmp/${version_prefix}-${git_version}
   mkdir -p ${versioned_build_path}
   cp -r ${temporary_build_path}/* ${versioned_build_path}
+  # apply patches to the source that are required for working code
+  # should not be required in the future as it introduces possible
+  # hacks that are hard to debug
   applyPatches ${versioned_build_path}
   pushd ${versioned_build_path} > /dev/null
   wine python setup.py update_files || die 'setup.py update_files failed'
@@ -118,7 +123,7 @@ function createInstallables() {
     addMingwDlls installables/${setup}
     rm -r ${absolute_executable_path}/${setup}
     cp -r installables/${setup} ${absolute_executable_path}
-    cp ${temporary_build_path}/cacert.pem ${absolute_executable_path}/${setup}
+    cp ${absolute_executable_path}/cacert.pem ${absolute_executable_path}/${setup}
     rm -r installables
     createInstallerVersion ${setup}
   done
@@ -141,9 +146,14 @@ function installProjectDependencies() {
   # install dependencies
   mkdir -p ${temporary_build_path}/wheels
   wine pip install ${pip_flags} pkg/requirements-leap.pip || die 'requirements-leap.pip could not be installed'
+  # fix requirements
+  # python-daemon breaks windows build
+  sed -i 's|^python-daemon|#python-daemon|' pkg/requirements.pip
   wine pip install ${pip_flags} pkg/requirements.pip || die 'requirements.pip could not be installed'
+  git checkout pkg/requirements.pip
   popd
   cp -r /root/.wine/drive_c/Python27/Lib/site-packages ${absolute_executable_path}
+  curl https://curl.haxx.se/ca/cacert.pem > ${absolute_executable_path}/cacert.pem || die 'cacert.pem could not be fetched - would result in bad ssl in installer'
 }
 # workaround for broken dependencies
 # runs before pip install requirements
@@ -185,7 +195,7 @@ function prepareBuildPath() {
     echo "using ${git_tag} as source for the project"
     git clone ${source_ro_path} ${temporary_build_path}
     pushd ${temporary_build_path}
-    git checkout ${git_tag}
+    git checkout ${git_tag} || die 'checkout "'${git_tag}'" failed'
     popd
   else
     echo "using current source tree for build"
@@ -221,7 +231,6 @@ function applyPatches() {
   # fix requirements
   # python-daemon breaks windows build
   sed -i 's|^python-daemon|#python-daemon|' ${root_path}/pkg/requirements.pip
-  curl https://curl.haxx.se/ca/cacert.pem > ${root_path}/cacert.pem || die 'cacert.pem could not be fetched - would result in bad ssl in installer'
 }
 # remove wine dlls that should not be in the installer
 # root: path that should be cleaned from dlls
