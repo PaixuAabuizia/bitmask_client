@@ -1,14 +1,10 @@
 TODO
 ====
 
-fix the ~/leap/events/zmq_certificates/public_keys/server.key
-fix logger (& remove hack in pyinstaller-build.sh)
-fix pysqlcipher (/LIB:,https get not working in setup.py)
-
-discuss: libssl:multilib
-dependency:wine
-in python
-as pycryptopp dependency
-in openvpn
+fix python-code (0.9.1) that fails on windows:
+- fix the ~/leap/events/zmq_certificates/public_keys/server.key
+- fix logger (& remove hack in pyinstaller-build.sh)
+- fix pysqlcipher (/LIB:,https get not working in setup.py)
+- merge bitmask_root from https://github.com/alirezamirzaeiyan/bitmask-root
 
 create similar infrastructure for osx dmg, preferably ran on osx for compressed dmg

@@ -7,7 +7,7 @@ basically you need this to setup your environment:
 # apt-get install wine
 # apt-get install nsis
 
-this is a incomplete list of dependencies, review the dependencies/Dockerfile
+this is a incomplete list of dependencies, review the pyinstaller/Dockerfile
 to get a understanding of what needs to be setup in order to have a
 environment that builds the installer
 
@@ -60,7 +60,7 @@ the produced installer will be stored in ${ROOT}/dist
 
 
 Pyinstaller
-============
+===========
 
 Pyinstaller is a docker image based on debian:jessie with a cross-compile
 toolchain (gcc) for building zlib and openssl in linux and wine (staging)
@@ -93,7 +93,7 @@ the configured volumes are:
 - the result of the builds in /var/build
 
 pyinstaller-build.sh
-===================
+====================
 
 Contains all steps to build the win32 executables. The project relies on
 a read-write source tree which will pollute the development environment and
@@ -125,3 +125,20 @@ root@0fa19215321f:/var/src/bitmask/pkg/windows# ./pyinstaller-build.sh
 ```
 
 and test the result binary (accessible in bitmask/build in a separate vm.
+
+OpenVPN
+=======
+
+OpenVPN is a straight forward cross compile image that builds the openvpn
+sourcecode from the git-repository to a windows executable that can be
+used by bitmask_root to launch eip.
+It needs to be rebuild regulary as openssl gets a new version about every
+month. PyInstaller uses the openssl that is compiled by this image
+
+Installer
+=========
+
+Installer is a straight forward debian image with makensis installed. The
+installer-build script lists the previously built files from pyinstaller and
+openvpn to pass it as nsh file to makensis. bitmask.nis controls what will
+be displayed to the user and how the components are installed and uninstalled
